@@ -11,6 +11,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
 
+import com.kircherelectronics.gyroscopeexplorer.activity.filter.GyroscopeOrientation;
+
 import java.util.Calendar;
 
 
@@ -28,6 +30,8 @@ public class ImageCapture extends Activity implements SensorEventListener {
     private long[] millis = new long[3];
     private final static String TAG = "ImageCapture";
     private int counter = 0;
+
+    private GyroscopeOrientation orientation;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,6 +54,7 @@ public class ImageCapture extends Activity implements SensorEventListener {
             location[i] = 0;
             millis[i] = System.currentTimeMillis();
         }
+        orientation = new GyroscopeOrientation(this);
     }
 
     @Override
