@@ -13,9 +13,6 @@ import android.widget.TextView;
 
 import com.kircherelectronics.gyroscopeexplorer.activity.filter.GyroscopeOrientation;
 
-import java.util.Calendar;
-
-
 public class ImageCapture extends Activity implements SensorEventListener {
 
     private SensorManager sensorManager;
