@@ -46,7 +46,9 @@ import android.media.ImageReader;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v13.app.FragmentCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -62,8 +64,11 @@ import android.widget.Toast;
 
 import com.kircherelectronics.gyroscopeexplorer.activity.filter.GyroscopeOrientation;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -74,6 +79,7 @@ import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import lapidus.edu.rec3dclient.Angles;
 import lapidus.edu.rec3dclient.R;
 
 
@@ -247,6 +253,11 @@ public class Camera2BasicFragment extends Fragment
      */
     private File mFile;
 
+    private File coords;
+
+    private int counter = 0;
+    FileWriter coordsWriter;
+
     /**
      * This a callback object for the {@link ImageReader}. "onImageAvailable" will be called when a
      * still image is ready to be saved.
@@ -256,7 +267,21 @@ public class Camera2BasicFragment extends Fragment
 
         @Override
         public void onImageAvailable(ImageReader reader) {
+            mFile = new File(getActivity().getExternalFilesDir(null), "pic" + counter++ + ".jpg");
             mBackgroundHandler.post(new ImageSaver(reader.acquireNextImage(), mFile));
+
+            try {
+                coordsWriter.write(String.format("%.2f", Math.toDegrees(vOrientation[0])) + " ");
+                coordsWriter.write(String.format("%.2f", Math.toDegrees(vOrientation[1])) + " ");
+                coordsWriter.write(String.format("%.2f", Math.toDegrees(vOrientation[2])) + "\n");
+                Log.i(TAG, "Saved rotation");
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+                Log.e(TAG, "error saving rotation: " + e);
+            } catch (IOException e) {
+                e.printStackTrace();
+                Log.e(TAG, "error saving rotation: " + e);
+            }
         }
 
     };
@@ -449,6 +474,7 @@ public class Camera2BasicFragment extends Fragment
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         mFile = new File(getActivity().getExternalFilesDir(null), "pic.jpg");
+        coords = new File(getActivity().getExternalFilesDir(null), "coords.txt");
     }
 
     @Override
@@ -470,6 +496,12 @@ public class Camera2BasicFragment extends Fragment
         gyroscopeOrientation.onResume();
 
         handler.post(orientationThread);
+        try {
+            coordsWriter = new FileWriter(coords);
+        } catch (IOException e) {
+            e.printStackTrace();
+            Log.i(TAG, "Error creating coords file " + e);
+        }
     }
 
     @Override
@@ -480,6 +512,14 @@ public class Camera2BasicFragment extends Fragment
         gyroscopeOrientation.onPause();
 
         handler.removeCallbacks(orientationThread);
+        try {
+            coordsWriter.flush();
+            coordsWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (NullPointerException e) {
+            Log.i(TAG, "Whoops");
+        }
     }
 
     private void requestCameraPermission() {
